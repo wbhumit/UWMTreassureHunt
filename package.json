@@ -1,0 +1,25 @@
+{
+  "name": "uwm-treasure-hunt",
+  "version": "1.0.0",
+  "description": "QR code-based treasure hunt web application for UWM campus",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "treasure-hunt",
+    "qr-code",
+    "uwm",
+    "education"
+  ],
+  "author": "UWM Data Science Club",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "qrcode": "^1.5.3"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

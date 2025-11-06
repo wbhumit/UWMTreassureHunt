@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UWM Treasure Hunt - Admin Panel</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Additional styles specific to admin page */
+        .qr-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .qr-card {
+            background: white;
+            border: 3px solid #000;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        .qr-card h3 {
+            color: #000;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .qr-card .location-number {
+            display: inline-block;
+            background: #FFB81C;
+            color: #000;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .qr-card img {
+            width: 250px;
+            height: 250px;
+            margin: 15px auto;
+            display: block;
+        }
+
+        .qr-card .url {
+            font-size: 0.8em;
+            color: #666;
+            word-break: break-all;
+            margin-top: 10px;
+        }
+
+        .admin-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.5em;
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+            }
+
+            header, footer, .admin-controls {
+                display: none;
+            }
+
+            .qr-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .qr-card {
+                border: 2px solid #000;
+                margin-bottom: 20px;
+            }
+        }
+
+        .instructions {
+            background: #f8f9fa;
+            border: 2px solid #000;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .instructions h3 {
+            margin-top: 0;
+            color: #000;
+        }
+
+        .instructions ol {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>🔧 UWM Treasure Hunt - Admin Panel</h1>
+        </header>
+
+        <div class="content" style="max-width: 1400px; margin: 0 auto; padding: 20px;">
+
+            <div class="instructions">
+                <h3>📋 Setup Instructions</h3>
+                <ol>
+                    <li><strong>Print QR Codes:</strong> Click "Print All QR Codes" to print all 10 codes</li>
+                    <li><strong>Prepare Signs:</strong> Mount each QR code on weather-resistant backing</li>
+                    <li><strong>Place at Locations:</strong> Install QR codes at their corresponding campus locations</li>
+                    <li><strong>Test:</strong> Scan each code with your phone to verify they work</li>
+                    <li><strong>Launch:</strong> Share the game URL with participants!</li>
+                </ol>
+                <p><strong>Game URL:</strong> <code id="game-url">Loading...</code></p>
+            </div>
+
+            <div class="admin-controls">
+                <button class="btn btn-primary" onclick="window.print()">
+                    🖨️ Print All QR Codes
+                </button>
+                <button class="btn btn-secondary" onclick="downloadAllQRCodes()">
+                    💾 Download All as Images
+                </button>
+                <button class="btn btn-secondary" onclick="location.reload()">
+                    🔄 Refresh
+                </button>
+                <a href="/" class="btn btn-secondary">
+                    ← Back to Game
+                </a>
+            </div>
+
+            <div id="loading" class="loading">
+                ⏳ Loading QR codes...
+            </div>
+
+            <div id="qr-grid" class="qr-grid" style="display: none;">
+                <!-- QR codes will be dynamically loaded here -->
+            </div>
+
+        </div>
+
+        <footer>
+            <p>UWM Treasure Hunt Admin Panel</p>
+        </footer>
+    </div>
+
+    <script>
+        // Load and display all QR codes on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Set the game URL
+                document.getElementById('game-url').textContent = window.location.origin;
+
+                // Fetch all QR codes from the server
+                const response = await fetch('/api/qr/all');
+
+                if (!response.ok) {
+                    throw new Error('Failed to load QR codes');
+                }
+
+                const qrCodes = await response.json();
+
+                // Hide loading, show grid
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('qr-grid').style.display = 'grid';
+
+                // Create QR code cards
+                const grid = document.getElementById('qr-grid');
+                qrCodes.forEach(qr => {
+                    const card = document.createElement('div');
+                    card.className = 'qr-card';
+                    card.innerHTML = `
+                        <div class="location-number">Location ${qr.id}</div>
+                        <h3>${qr.name}</h3>
+                        <img src="${qr.qrCode}" alt="QR Code for ${qr.name}">
+                        <div class="url">${qr.url}</div>
+                    `;
+                    grid.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error('Error loading QR codes:', error);
+                document.getElementById('loading').innerHTML = `
+                    <div style="color: red;">
+                        ❌ Error loading QR codes: ${error.message}
+                        <br><br>
+                        <button class="btn btn-primary" onclick="location.reload()">Try Again</button>
+                    </div>
+                `;
+            }
+        });
+
+        // Download all QR codes as individual image files
+        async function downloadAllQRCodes() {
+            try {
+                const response = await fetch('/api/qr/all');
+                const qrCodes = await response.json();
+
+                // Download each QR code with a delay to avoid browser blocking
+                for (let i = 0; i < qrCodes.length; i++) {
+                    const qr = qrCodes[i];
+                    await new Promise(resolve => setTimeout(resolve, 200)); // 200ms delay
+
+                    const link = document.createElement('a');
+                    link.href = qr.qrCode;
+                    link.download = `UWM-Location-${qr.id}-${qr.name.replace(/[^a-zA-Z0-9]/g, '-')}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+
+                alert(`✅ Downloaded ${qrCodes.length} QR codes!`);
+
+            } catch (error) {
+                console.error('Error downloading QR codes:', error);
+                alert('❌ Error downloading QR codes. Please try again.');
+            }
+        }
+    </script>
+</body>
+</html>

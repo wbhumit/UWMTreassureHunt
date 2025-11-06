@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>UWM Treasure Hunt</title>
+    <link rel="stylesheet" href="style.css">
+
+    <!-- html5-qrcode library for QR scanning -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+    <!-- Canvas Confetti for victory celebration -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+    <!-- Main Container -->
+    <div id="app">
+
+        <!-- Header (always visible) -->
+        <header>
+            <h1>🐾 UWM Treasure Hunt</h1>
+            <div id="progress-container" style="display: none;">
+                <div class="progress-bar">
+                    <div id="progress-fill"></div>
+                </div>
+                <p id="progress-text">0/10 Locations Found</p>
+            </div>
+        </header>
+
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="screen active">
+            <div class="content">
+                <div class="logo">🏛️</div>
+                <h2>Welcome to the UWM Campus Treasure Hunt!</h2>
+                <p class="description">
+                    Explore the University of Wisconsin-Milwaukee campus by finding and scanning
+                    QR codes at 10 iconic locations. Each code reveals a clue to find the next spot!
+                </p>
+
+                <div class="info-box">
+                    <h3>📋 How to Play</h3>
+                    <ol>
+                        <li>Click "Start Hunt" to see your first clue</li>
+                        <li>Navigate to the location described in the clue</li>
+                        <li>Scan the QR code when you arrive</li>
+                        <li>Read about the location and get your next clue</li>
+                        <li>Repeat until all 10 locations are found!</li>
+                    </ol>
+                </div>
+
+                <div class="info-box">
+                    <h3>📱 Requirements</h3>
+                    <ul>
+                        <li>Allow camera access when prompted</li>
+                        <li>Keep this tab open during the hunt</li>
+                        <li>Visit locations in order</li>
+                    </ul>
+                </div>
+
+                <button class="btn btn-primary btn-large" onclick="startGame()">
+                    🚀 Start Hunt
+                </button>
+
+                <p class="timer-display" id="welcome-timer" style="display: none;">
+                    <strong>Previous Best Time:</strong> <span id="best-time-display"></span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Clue Screen -->
+        <div id="clue-screen" class="screen">
+            <div class="content">
+                <div class="clue-container">
+                    <h2>📍 Find This Location</h2>
+                    <div class="clue-box">
+                        <p id="current-clue"></p>
+                    </div>
+
+                    <button class="btn btn-primary btn-large" onclick="openScanner()">
+                        📷 Scan QR Code
+                    </button>
+
+                    <div class="help-text">
+                        <p>💡 <strong>Tip:</strong> Look around the location for a QR code sign</p>
+                    </div>
+                </div>
+
+                <div class="stats-box">
+                    <div class="stat">
+                        <span class="stat-label">Current Location:</span>
+                        <span class="stat-value" id="current-location-number">1</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Time Elapsed:</span>
+                        <span class="stat-value" id="timer-display">00:00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scanner Screen -->
+        <div id="scanner-screen" class="screen">
+            <div class="content">
+                <h2>📷 Scan QR Code</h2>
+
+                <div id="scanner-container">
+                    <div id="reader"></div>
+                </div>
+
+                <div id="scanner-status" class="info-box">
+                    <p>Position the QR code within the frame</p>
+                </div>
+
+                <button class="btn btn-secondary" onclick="closeScanner()">
+                    ← Back to Clue
+                </button>
+            </div>
+        </div>
+
+        <!-- Location Found Screen -->
+        <div id="found-screen" class="screen">
+            <div class="content">
+                <div class="success-icon">✅</div>
+                <h2>Location Found!</h2>
+
+                <div class="location-info">
+                    <h3 id="found-location-name"></h3>
+
+                    <div class="info-box fun-fact">
+                        <h4>📚 Did You Know?</h4>
+                        <p id="fun-fact"></p>
+                    </div>
+
+                    <div id="next-clue-container">
+                        <h4>🔍 Next Clue</h4>
+                        <div class="clue-box">
+                            <p id="next-clue"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary btn-large" onclick="continueToNextLocation()" id="continue-btn">
+                    Continue Hunt →
+                </button>
+            </div>
+        </div>
+
+        <!-- Victory Screen -->
+        <div id="victory-screen" class="screen">
+            <div class="content">
+                <div class="trophy">🏆</div>
+                <h2>Congratulations!</h2>
+                <h3>You completed the UWM Treasure Hunt!</h3>
+
+                <div class="victory-stats">
+                    <div class="stat-card">
+                        <div class="stat-number">10</div>
+                        <div class="stat-label">Locations Found</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="final-time">00:00</div>
+                        <div class="stat-label">Total Time</div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <h4>🎓 You explored:</h4>
+                    <ul id="locations-visited"></ul>
+                </div>
+
+                <div class="victory-buttons">
+                    <button class="btn btn-primary btn-large" onclick="playAgain()">
+                        🔄 Play Again
+                    </button>
+                    <button class="btn btn-secondary" onclick="shareResults()">
+                        📤 Share Results
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Screen -->
+        <div id="error-screen" class="screen">
+            <div class="content">
+                <div class="error-icon">⚠️</div>
+                <h2>Oops!</h2>
+                <p id="error-message"></p>
+                <button class="btn btn-primary" onclick="closeError()">
+                    Try Again
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>Made with ❤️ for UWM Data Science Club</p>
+        <button class="btn btn-link" onclick="resetGame()">Reset Game</button>
+        <a href="/admin" class="btn btn-link">Admin Panel</a>
+    </footer>
+
+    <!-- Game Logic -->
+    <script src="script.js"></script>
+</body>
+</html>
